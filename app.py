@@ -30,7 +30,10 @@ def bullets_to_outline(bullets: str, tone: str = "Neutral") -> list[dict]:
     }
     user_msg = {
         "role": "user",
-        "content": f"Tone: {tone}
+        "content": f"""Tone: {tone}
+Bullets:
+{bullets}"""
+    }
 Bullets:
 {bullets}"
     }
