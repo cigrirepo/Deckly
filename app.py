@@ -35,6 +35,9 @@ Bullets:
 {bullets}"
     }
 Bullets:
+{bullets}"
+    }
+Bullets:
 {bullets}"""
     }
 Bullets:
