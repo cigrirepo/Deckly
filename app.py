@@ -15,26 +15,34 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # -- LLM Prompt Chaining: Bullets to Structured Outline
 @st.cache_data
-def bullets_to_outline(bullets: str, tone: str = "Neutral") -> list:
+def bullets_to_outline(bullets: str, tone: str = "Neutral") -> list[dict]:
+    """
+    Converts raw bullet text into a structured outline via LLM JSON output.
+    Returns a list of sections, each a dict with 'title' and 'points'.
+    """
     prompt = (
-        f"TONE: {tone}\n"
-        "Convert the following bullet points into a structured JSON outline.\n"
-        "Output a JSON list of sections with 'title' and 'points'.\n"
-        f"BULLETS:\n{bullets}"
+        f"TONE: {tone}
+"
+        "Convert the following bullet points into a structured JSON outline.
+"
+        "Output only a JSON array of sections with keys 'title' and 'points'.
+"
+        f"BULLETS:
+{bullets}"
     )
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a world-class pitch-deck strategist."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.3,
-    )
-    content = response.choices[0].message.content
     try:
-        outline = json.loads(content)
-    except json.JSONDecodeError:
-        st.error("Failed to parse outline: ensure the model response is valid JSON.")
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a world-class pitch-deck strategist."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            response_format={"type": "json_object"}
+        )
+        outline = response.choices[0].message.json()
+    except Exception as e:
+        st.error(f"Failed to generate outline: {e}")
         outline = []
     return outline
 
