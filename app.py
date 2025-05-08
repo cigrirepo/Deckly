@@ -17,26 +17,45 @@ openai.api_key = st.secrets.get("OPENAI_API_KEY", "")
 # ── 1) Bullets → Outline + Speaker Notes ────────────────────────────────
 @st.cache_data
 def bullets_to_outline(bullets: str, tone: str = "Neutral") -> list[dict]:
-    """Return [{title, points[], speaker_notes}] via GPT."""
-    prompt = f"""TONE: {tone}
-Convert these raw bullet points into a polished investor story.
-Return ONLY valid JSON: {{"sections":[{{"title":"…","points":["…"],"speaker_notes":"…"}}]}}
-BULLETS:\n{bullets}"""
+    """Call OpenAI to convert bullets into sections with speaker notes."""
+    system_msg = {
+        "role": "system",
+        "content": (
+            "You are a venture capital analyst and presentation writer. "
+            "Receive a list of bullet points about a startup and produce a JSON object with one key 'sections'. "
+            "The value of 'sections' is a list of objects, each with keys: 'title' (string), 'points' (list of strings), "
+            "and 'speaker_notes' (a concise paragraph describing what the presenter should say on this slide). "
+            "Output ONLY valid JSON, without any extra commentary."
+        )
+    }
+    user_msg = {
+        "role": "user",
+        "content": f"Tone: {tone}
+Bullets:
+{bullets}"
+    }
     try:
         resp = openai.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role":"system","content":"You are a world‑class venture analyst & presentation writer."},
-                      {"role":"user","content":prompt}],
+            messages=[system_msg, user_msg],
             temperature=0.25
         )
-        content = resp.choices[0].message.content
-        sections = json.loads(re.search(r"\{.*\}", content, re.S).group())['sections']
+        content = resp.choices[0].message.content.strip()
+        data = json.loads(content)
+        sections = data.get("sections", [])
+        if not sections:
+            raise ValueError("No 'sections' found in JSON.")
     except Exception as e:
         st.error(f"Outline error: {e}")
-        sections = [{"title":"Overview","points":bullets.split('\n'),"speaker_notes":"TODO"}]
+        # Fallback: one section with raw bullet lines
+        sections = [{
+            "title": "Overview",
+            "points": bullets.splitlines(),
+            "speaker_notes": "Review the problem and opportunity."
+        }]
     return sections
 
-# ── 2) Palette Extraction ───────────────────────────────────────────────
+# ── 2) Palette Extraction ─────────────────────────────────────────────── ───────────────────────────────────────────────
 @st.cache_data
 def extract_palette(img_b: bytes, k: int = 4):
     arr = np.array(Image.open(io.BytesIO(img_b)).convert("RGB")).reshape(-1,3)
