@@ -7,7 +7,6 @@ from PIL import Image
 import numpy as np
 from sklearn.cluster import KMeans
 from pptx import Presentation
-from pptx.util import Inches
 from reportlab.pdfgen import canvas
 
 # -- Configuration
@@ -23,7 +22,7 @@ def bullets_to_outline(bullets: str, tone: str = "Neutral") -> list:
         "Output a JSON list of sections with 'title' and 'points'.\n"
         f"BULLETS:\n{bullets}"
     )
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a world-class pitch-deck strategist."},
@@ -55,7 +54,7 @@ def describe_logo(image_bytes: bytes) -> str:
         {"type": "text", "text": "Describe the style and mood of this logo in one sentence."},
         {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
     ]
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": multimodal}],
         temperature=0.5,
@@ -72,7 +71,6 @@ def build_deck(outline: list[dict], palette: list[str], logo_bytes: bytes | None
         body = slide.shapes.placeholders[1].text_frame
         for point in section.get("points", []):
             body.add_paragraph().text = point
-        # TODO: apply palette & add logo watermark per slide
     buf = io.BytesIO()
     prs.save(buf)
     return buf.getvalue()
@@ -132,4 +130,3 @@ if st.button("Generate Deck"):
         st.success("Your Deck and Brief are ready:")
         st.download_button("📥 Download Deck (PPTX)", deck, "deckly_deck.pptx")
         st.download_button("📥 Download Brief (PDF)", brief, "deckly_summary.pdf")
-
