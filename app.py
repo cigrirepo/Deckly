@@ -20,16 +20,11 @@ def bullets_to_outline(bullets: str, tone: str = "Neutral") -> list[dict]:
     Converts raw bullet text into a structured outline via LLM JSON output.
     Returns a list of sections, each a dict with 'title' and 'points'.
     """
-    prompt = (
-        f"TONE: {tone}
-"
-        "Convert the following bullet points into a structured JSON outline.
-"
-        "Output only a JSON array of sections with keys 'title' and 'points'.
-"
-        f"BULLETS:
-{bullets}"
-    )
+    prompt = f"""TONE: {tone}
+Convert the following bullet points into a structured JSON outline.
+Output only a JSON array of sections with keys 'title' and 'points'.
+BULLETS:
+{bullets}"""
     try:
         response = openai.chat.completions.create(
             model="gpt-4o-mini",
